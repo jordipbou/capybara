@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
 #include "unity.h"
-#include "vm.h"
+#include "capybara.h"
 
 void setUp(void) {}
 
