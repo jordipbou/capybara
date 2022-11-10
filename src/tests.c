@@ -207,6 +207,28 @@ void test_compile_push(void) {
 	deinit(ctx);
 }
 
+void test_allot(void) {
+	CTX* ctx = init(1024, 1024);
+
+	TEST_ASSERT_EQUAL_PTR(ctx->bottom, ctx->dhere);
+
+	CELL free = available(ctx);
+
+	allot(ctx, 10);
+
+	TEST_ASSERT_EQUAL_INT(free - 10, available(ctx));
+
+	allot(ctx, -5);
+
+	TEST_ASSERT_EQUAL_INT(free - 5, available(ctx));
+
+	allot(ctx, -15);
+
+	TEST_ASSERT_EQUAL_PTR(ctx->bottom, ctx->dhere);
+
+	deinit(ctx);
+}
+
 int main(void) {
 	UNITY_BEGIN();
 
@@ -219,6 +241,8 @@ int main(void) {
 	RUN_TEST(test_compile_next);
 	RUN_TEST(test_compile_cfunc);
 	RUN_TEST(test_compile_push);
+
+	RUN_TEST(test_allot);
 
 	return UNITY_END();
 }

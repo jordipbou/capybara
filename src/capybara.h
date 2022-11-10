@@ -26,6 +26,7 @@ typedef struct _CTX {
 	CELL dsize, csize;	// Data space size and code space size
 	BYTE* dhere;				// Pointer to start of free memory on data segment
 	BYTE* chere;				// Pointer to start of free memory on code segment
+	BYTE* bottom;				// Lower address of data space free region (above header)
 	FUNC* Fx;						// Virtual register with address of function to call from C 
 	CELL Lx;						// Virtual register for passing literal values to C
 	BYTE* code;					// Pointer to code space
@@ -88,6 +89,7 @@ CTX* init(CELL dsize, CELL csize) {
 
 	// Start of free memory on data space is cell aligned
 	ctx->dhere = (BYTE*)((CELL)ctx + ALIGN(sizeof(CTX), 2*sizeof(CELL)));
+	ctx->bottom = ctx->dhere;
 	ctx->chere = ctx->code;
 
 	return ctx;
@@ -190,3 +192,18 @@ void compile_reg(CTX* ctx, CELL lit, BYTE offset) {
 	((BYTE* (*)(BYTE*, CTX*, void*, void*))(f))\
 		(ctx->code, ctx, NULL, NULL)
 #endif
+
+// MEMORY MANAGEMENT ----------------------------------------------------------
+
+BYTE* top(CTX* ctx) { return ((BYTE*)ctx) + ctx->dsize; }
+CELL available(CTX* ctx) { return top(ctx) - ctx->dhere; }
+
+void allot(CTX* ctx, CELL bytes) {
+	if (bytes < 0) {
+		if ((ctx->dhere + bytes) > ctx->bottom) ctx->dhere += bytes;
+		else ctx->dhere = ctx->bottom;
+	} else if (bytes > 0) {
+		if (ctx->dhere + bytes < top(ctx)) ctx->dhere += bytes;
+		else { /* Not enough memory error */ }
+	}
+}
