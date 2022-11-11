@@ -229,6 +229,22 @@ void test_allot(void) {
 	deinit(ctx);
 }
 
+void test_align(void) {
+	CTX* ctx = init(1024, 1024);
+
+	align(ctx);
+
+	TEST_ASSERT_EQUAL_PTR(ctx->dhere, ALIGN(ctx->dhere, sizeof(CELL)));
+
+	allot(ctx, 1);
+	TEST_ASSERT_EQUAL_PTR(ctx->dhere + 7, ALIGN(ctx->dhere, sizeof(CELL)));
+
+	align(ctx);
+	TEST_ASSERT_EQUAL_PTR(ctx->dhere, ALIGN(ctx->dhere, sizeof(CELL)));
+	
+	deinit(ctx);
+}
+
 int main(void) {
 	UNITY_BEGIN();
 
@@ -243,6 +259,7 @@ int main(void) {
 	RUN_TEST(test_compile_push);
 
 	RUN_TEST(test_allot);
+	RUN_TEST(test_align);
 
 	return UNITY_END();
 }

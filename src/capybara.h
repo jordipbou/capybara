@@ -176,7 +176,7 @@ CELL compile_next(CTX* ctx) {
 	// 7:  c3															ret
 	// 8 bytes
 	CELL bytes = compile_bytes(ctx, "\x48\x8D\x81", 3);
-	bytes += compile_half(ctx, ctx->chere - ctx->code + 5);
+	bytes += compile_half(ctx, (HALF)(ctx->chere - ctx->code + 5));
 	bytes += compile_byte(ctx, 0xC3);
 	return bytes;
 }
@@ -224,4 +224,9 @@ void allot(CTX* ctx, CELL bytes) {
 		if (ctx->dhere + bytes < top(ctx)) ctx->dhere += bytes;
 		else { /* Not enough memory error */ }
 	}
+}
+
+void align(CTX* ctx) {
+	BYTE* dhere = (BYTE*)(ALIGN(ctx->dhere, sizeof(CELL)));
+	allot(ctx, dhere - ctx->dhere);
 }
