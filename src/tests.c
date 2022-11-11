@@ -36,18 +36,18 @@ void test_compile_byte(void) {
 	TEST_ASSERT_EQUAL_INT(ctx->code, ctx->chere);
 
 	BYTE* chere = unprotect(ctx);
-	compile_lit(ctx, BYTE, 0xC3);
+	CELL bytes = compile_byte(ctx, 0xC3);
 	protect(ctx, chere);
 
-	TEST_ASSERT_EQUAL_INT(ctx->code + 1, ctx->chere);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, ctx->chere);
 
 	TEST_ASSERT_EQUAL_INT8(0xC3, *(ctx->code));
 
 	chere = unprotect(ctx);
-	compile_lit(ctx, BYTE, 0xB8);
+	bytes += compile_byte(ctx, 0xB8);
 	protect(ctx, chere);
 
-	TEST_ASSERT_EQUAL_INT(ctx->code + 2, ctx->chere);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, ctx->chere);
 
 	TEST_ASSERT_EQUAL_INT8(0xC3, *(ctx->code));
 	TEST_ASSERT_EQUAL_INT8(0xB8, *(ctx->code + 1));
@@ -61,10 +61,10 @@ void test_compile_bytes(void) {
 	TEST_ASSERT_EQUAL_INT(ctx->code, ctx->chere);
 
 	BYTE* chere = unprotect(ctx);
-	compile_bytes(ctx, "\xB8\x11\xFF\x00\xFF", 5);
+	CELL bytes = compile_bytes(ctx, "\xB8\x11\xFF\x00\xFF", 5);
 	protect(ctx, chere);
 
-	TEST_ASSERT_EQUAL_INT(ctx->code + 5, ctx->chere);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, ctx->chere);
 
 	TEST_ASSERT_EQUAL_INT8(0xB8, *(ctx->code));
 	TEST_ASSERT_EQUAL_INT8(0x11, *(ctx->code + 1));
@@ -73,10 +73,10 @@ void test_compile_bytes(void) {
 	TEST_ASSERT_EQUAL_INT8(0xFF, *(ctx->code + 4));
 
 	unprotect(ctx);
-	compile_bytes(ctx, "\xC7\x47", 2);
+	bytes += compile_bytes(ctx, "\xC7\x47", 2);
 	protect(ctx, chere);
 
-	TEST_ASSERT_EQUAL_INT(ctx->code + 7, ctx->chere);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, ctx->chere);
 
 	TEST_ASSERT_EQUAL_INT8(0xC7, *(ctx->code + 5));
 	TEST_ASSERT_EQUAL_INT8(0x47, *(ctx->code + 6));
@@ -90,34 +90,34 @@ void test_compile_literal(void) {
 	TEST_ASSERT_EQUAL_INT(ctx->code, ctx->chere);
 
 	BYTE* chere = unprotect(ctx);
-	compile_lit(ctx, CELL, 41378);
+	CELL bytes = compile_cell(ctx, 41378);
 	protect(ctx, chere);
 
-	TEST_ASSERT_EQUAL_INT(ctx->code + sizeof(CELL), ctx->chere);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, ctx->chere);
 
 	TEST_ASSERT_EQUAL_INT64(41378, *((CELL*)(ctx->code)));
 
 	chere = unprotect(ctx);
-	compile_lit(ctx, CELL, 13);
+	bytes += compile_cell(ctx, 13);
 	protect(ctx, chere);
 
-	TEST_ASSERT_EQUAL_INT(ctx->code + 2*sizeof(CELL), ctx->chere);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, ctx->chere);
 
 	TEST_ASSERT_EQUAL_INT64(13, *((CELL*)(ctx->code + sizeof(CELL))));
 
 	chere = unprotect(ctx);
-	compile_lit(ctx, HALF, 19923);
+	bytes += compile_half(ctx, 19923);
 	protect(ctx, chere);
 
-	TEST_ASSERT_EQUAL_INT(ctx->code + 2*sizeof(CELL) + sizeof(HALF), ctx->chere);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, ctx->chere);
 
 	TEST_ASSERT_EQUAL_INT32(19923, *((HALF*)(ctx->code + 2*sizeof(CELL))));
 
 	chere = unprotect(ctx);
-	compile_lit(ctx, HALF, -367);
+	bytes += compile_half(ctx, -367);
 	protect(ctx, chere);
 
-	TEST_ASSERT_EQUAL_INT(ctx->code + 2*sizeof(CELL) + 2*sizeof(HALF), ctx->chere);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, ctx->chere);
 
 	TEST_ASSERT_EQUAL_INT32(-367, *((HALF*)(ctx->code + 2*sizeof(CELL) + sizeof(HALF))));
 
@@ -130,20 +130,20 @@ void test_compile_next(void) {
 	TEST_ASSERT_EQUAL_INT(ctx->code, ctx->chere);
 
 	BYTE* chere = unprotect(ctx);
-	compile_next(ctx);
+	CELL bytes = compile_next(ctx);
 	protect(ctx, chere);
 
-	TEST_ASSERT_EQUAL_INT(ctx->code + 8, ctx->chere);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, ctx->chere);
 
 	BYTE* NEXT = CALL(ctx->code, ctx);
 
 	TEST_ASSERT_EQUAL_PTR(ctx->code + 8, NEXT);
 
 	chere = unprotect(ctx);
-	compile_next(ctx);
+	bytes += compile_next(ctx);
 	protect(ctx, chere);
 
-	TEST_ASSERT_EQUAL_INT(ctx->code + 16, ctx->chere);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, ctx->chere);
 
 	NEXT = CALL(NEXT, ctx);
 
@@ -161,11 +161,11 @@ void test_compile_cfunc(void) {
 	TEST_ASSERT_EQUAL_INT(ctx->code, ctx->chere);
 
 	BYTE* chere = unprotect(ctx);
-	compile_cfunc(ctx, &generic_cfunc);
-	compile_next(ctx);
+	CELL bytes = compile_cfunc(ctx, &generic_cfunc);
+	bytes += compile_next(ctx);
 	protect(ctx, chere);
 
-	TEST_ASSERT_EQUAL_INT(ctx->code + 22, ctx->chere);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, ctx->chere);
 
 	BYTE* NEXT = CALL(ctx->code, ctx);
 
@@ -183,26 +183,26 @@ void test_compile_push(void) {
 	TEST_ASSERT_EQUAL_INT(0, ctx->Lx);
 
 	BYTE* chere = unprotect(ctx);
-	compile_push(ctx, 13);
-	compile_next(ctx);
+	CELL bytes = compile_push(ctx, 13);
+	bytes += compile_next(ctx);
 	protect(ctx, chere);
 
-	TEST_ASSERT_EQUAL_INT(ctx->code + 22, ctx->chere);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, ctx->chere);
 
 	BYTE* NEXT = CALL(ctx->code, ctx);
 
 	TEST_ASSERT_EQUAL_INT(13, ctx->Lx);
-	TEST_ASSERT_EQUAL_INT(ctx->code + 22, NEXT);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, NEXT);
 
 	chere = unprotect(ctx);
-	compile_push(ctx, 17);
-	compile_next(ctx);
+	bytes += compile_push(ctx, 17);
+	bytes += compile_next(ctx);
 	protect(ctx, chere);
 
 	NEXT = CALL(NEXT, ctx);
 
 	TEST_ASSERT_EQUAL_INT(17, ctx->Lx);
-	TEST_ASSERT_EQUAL_INT(ctx->code + 44, NEXT);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, NEXT);
 
 	deinit(ctx);
 }

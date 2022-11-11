@@ -147,31 +147,49 @@ BYTE* protect(CTX* ctx, BYTE* old_chere) {
 
 // Compile helpers
 
-#define compile_lit(ctx, type, lit)\
-	{ *((type*)(ctx->chere)) = ((type)(lit)); ctx->chere += sizeof(type); }
-
-void compile_bytes(CTX* ctx, BYTE* bytes, CELL len) {
-	memcpy(ctx->chere, bytes, len);
-	ctx->chere += len;
+CELL compile_byte(CTX* ctx, BYTE lit) {
+	*(ctx->chere) = lit;
+	ctx->chere++;
+	return 1;
 }
 
-void compile_next(CTX* ctx) {
+CELL compile_half(CTX* ctx, HALF lit) {
+	*((HALF*)(ctx->chere)) = lit;
+	ctx->chere += sizeof(HALF);
+	return sizeof(HALF);
+}
+
+CELL compile_cell(CTX* ctx, CELL lit) {
+	*((CELL*)(ctx->chere)) = lit;
+	ctx->chere += sizeof(CELL);
+	return sizeof(CELL);
+}
+
+CELL compile_bytes(CTX* ctx, BYTE* bytes, CELL len) {
+	memcpy(ctx->chere, bytes, len);
+	ctx->chere += len;
+	return len;
+}
+
+CELL compile_next(CTX* ctx) {
 	// 0:  48 8d 81 <H:Address after ret>	lea    rax,[rcx + <address after ret>]
 	// 7:  c3															ret
 	// 8 bytes
-	compile_bytes(ctx, "\x48\x8D\x81", 3);
-	compile_lit(ctx, HALF, ctx->chere - ctx->code + 5);
-	compile_lit(ctx, BYTE, 0xC3);
+	CELL bytes = compile_bytes(ctx, "\x48\x8D\x81", 3);
+	bytes += compile_half(ctx, ctx->chere - ctx->code + 5);
+	bytes += compile_byte(ctx, 0xC3);
+	return bytes;
 }
 
-void compile_reg(CTX* ctx, CELL lit, BYTE offset) {
+CELL compile_reg(CTX* ctx, CELL lit, BYTE offset) {
 	// 0:  49 ba <C:Address of cfunc>			movabs r10,0xff00ff11ff22ff33
 	// a:  4c 89 52 <B:Fx offset>					mov    Q_WORD PTR [rdx+<Fx offset>],r10
 	// 14 bytes
-	compile_bytes(ctx, "\x49\xBA", 2);
-	compile_lit(ctx, CELL, lit);
-	compile_bytes(ctx, "\x4C\x89\x52", 3);
-	compile_lit(ctx, BYTE, offset);
+	CELL bytes = compile_bytes(ctx, "\x49\xBA", 2);
+	bytes += compile_cell(ctx, lit);
+	bytes += compile_bytes(ctx, "\x4C\x89\x52", 3);
+	bytes += compile_byte(ctx, offset);
+	return bytes;
 }
 
 #define compile_cfunc(ctx, cfunc)	compile_reg(ctx, (CELL)cfunc, offsetof(CTX, Fx))
@@ -181,8 +199,8 @@ void compile_reg(CTX* ctx, CELL lit, BYTE offset) {
 // RSI: Not used as windows only accepts 4 parameters on registers
 // RDX: Pointer to context
 // RCX: Pointer to code space
-// R8: Reserved, but not used
-// R9: Reserved, but not used
+// R8: Reserved
+// R9: Reserved
 #ifdef __linux__
 #define CALL(f, ctx)\
 	((BYTE* (*)(void*, void*, CTX*, BYTE*, void*, void*))(f))\
