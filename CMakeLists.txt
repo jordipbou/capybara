@@ -19,3 +19,9 @@ add_executable (
 	src/tests.c
 	deps/Unity/src/unity.c)
 target_include_directories (tests PRIVATE src deps/Unity/src)
+
+add_executable (
+	mem_tests
+	src/mem_tests.c
+	deps/Unity/src/unity.c)
+target_include_directories (mem_tests PRIVATE src deps/Unity/src)

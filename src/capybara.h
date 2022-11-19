@@ -19,11 +19,6 @@ typedef int8_t BYTE;
 typedef int32_t HALF;
 typedef int64_t CELL;
 
-typedef struct _PAIR {
-	struct _PAIR* cdr;
-	CELL car;
-} PAIR;
-
 typedef struct _CTX CTX;
 typedef void (*FUNC)(CTX*);
 
@@ -35,7 +30,6 @@ typedef struct _CTX {
 	FUNC* Fx;						// Virtual register with address of function to call from C 
 	CELL Lx;						// Virtual register for passing literal values to C
 	BYTE* code;					// Pointer to code space
-	PAIR* fpairs;				// Pointer to free pairs list
 } CTX;
 
 // CONTEXT CREATION AND DESTRUCTION -------------------------------------------
@@ -53,9 +47,6 @@ CELL pagesize() {
 	return PAGESIZE;
 }
 
-CELL init_pairs(CTX* ctx, CELL pairs);
-void deinit(CTX* ctx);
-
 // Initializes two memory blocks, one as read-write data space and another
 // one as read-exec for code space.
 // Returns a pointer to a context structure with access to both blocks.
@@ -63,7 +54,7 @@ void deinit(CTX* ctx);
 // Free data space pointer will be aligned to first 2*sizeof(CELL) address
 // above context address + sizeof(CTX);
 
-CTX* init(CELL dsize, CELL csize, CELL pairs) {
+CTX* init(CELL dsize, CELL csize) {
 	CELL PAGESIZE = pagesize();
 
 	dsize = ALIGN(dsize, PAGESIZE);
@@ -100,12 +91,6 @@ CTX* init(CELL dsize, CELL csize, CELL pairs) {
 	ctx->dhere = (BYTE*)((CELL)ctx + ALIGN(sizeof(CTX), 2*sizeof(CELL)));
 	ctx->bottom = ctx->dhere;
 	ctx->chere = ctx->code;
-
-	// Reserve space for list of empty pairs
-	if (init_pairs(ctx, pairs) == -1) {
-		deinit(ctx);
-		return NULL;
-	}
 
 	return ctx;
 }
@@ -244,35 +229,4 @@ void allot(CTX* ctx, CELL bytes) {
 void align(CTX* ctx) {
 	BYTE* dhere = (BYTE*)(ALIGN(ctx->dhere, sizeof(CELL)));
 	allot(ctx, dhere - ctx->dhere);
-}
-
-// FREE PAIRS -----------------------------------------------------------------
-
-CELL length(CTX* ctx, PAIR* list) {
-	for (CELL i = 0;; i++) { 
-		if (list == (PAIR*)ctx) { 
-			return i; 
-		} else { 
-			list = list->cdr; 
-		} 
-	}
-}
-
-CELL init_pairs(CTX* ctx, CELL pairs) {
-	if (pairs * 2 * sizeof(CELL) > available(ctx)) return -1;
-
-	PAIR* p = ctx->fpairs = (PAIR*)(ALIGN(top(ctx) - sizeof(PAIR), sizeof(PAIR)));
-	if (p > (PAIR*)(top(ctx) - sizeof(CELL))) {
-		p = ctx->fpairs = (PAIR*)(ALIGN(top(ctx) - 3*sizeof(CELL), sizeof(PAIR)));
-	}
-
-	for (CELL i = 0; i < pairs - 1; i++, p--) {
-		p->cdr = p - 1;
-		p->car = 0;
-	}
-	// Empty list is represented by context address.
-	p->cdr = (PAIR*)ctx;
-	p->car = 0;
-
-	return 0;
 }

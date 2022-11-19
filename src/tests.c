@@ -11,7 +11,7 @@ void test_block_initialization(void) {
 	CELL data_size = 1024;
 	CELL code_size = 1024;
 
-	CTX* ctx = init(data_size, code_size, 0);
+	CTX* ctx = init(data_size, code_size);
 	TEST_ASSERT_NOT_NULL(ctx);
 
 	TEST_ASSERT_GREATER_OR_EQUAL_INT(data_size, ctx->dsize);
@@ -31,7 +31,7 @@ void test_block_initialization(void) {
 }
 
 void test_compile_byte(void) {
-	CTX* ctx = init(1024, 1024, 0);
+	CTX* ctx = init(1024, 1024);
 
 	TEST_ASSERT_EQUAL_INT(ctx->code, ctx->chere);
 
@@ -56,7 +56,7 @@ void test_compile_byte(void) {
 }
 
 void test_compile_bytes(void) {
-	CTX* ctx = init(1024, 1024, 0);
+	CTX* ctx = init(1024, 1024);
 
 	TEST_ASSERT_EQUAL_INT(ctx->code, ctx->chere);
 
@@ -85,7 +85,7 @@ void test_compile_bytes(void) {
 }
 
 void test_compile_literal(void) {
-	CTX* ctx = init(1024, 1024, 0);
+	CTX* ctx = init(1024, 1024);
 
 	TEST_ASSERT_EQUAL_INT(ctx->code, ctx->chere);
 
@@ -125,7 +125,7 @@ void test_compile_literal(void) {
 }
 
 void test_compile_next(void) {
-	CTX* ctx = init(1024, 1024, 0);
+	CTX* ctx = init(1024, 1024);
 	
 	TEST_ASSERT_EQUAL_INT(ctx->code, ctx->chere);
 
@@ -156,7 +156,7 @@ void generic_cfunc(CTX* ctx) {
 }
 
 void test_compile_cfunc(void) {
-	CTX* ctx = init(1024, 1024, 0);
+	CTX* ctx = init(1024, 1024);
 
 	TEST_ASSERT_EQUAL_INT(ctx->code, ctx->chere);
 
@@ -176,7 +176,7 @@ void test_compile_cfunc(void) {
 }
 
 void test_compile_push(void) {
-	CTX* ctx = init(1024, 1024, 0);
+	CTX* ctx = init(1024, 1024);
 
 	TEST_ASSERT_EQUAL_INT(ctx->code, ctx->chere);
 
@@ -208,7 +208,7 @@ void test_compile_push(void) {
 }
 
 void test_allot(void) {
-	CTX* ctx = init(1024, 1024, 0);
+	CTX* ctx = init(1024, 1024);
 
 	TEST_ASSERT_EQUAL_PTR(ctx->bottom, ctx->dhere);
 
@@ -230,7 +230,7 @@ void test_allot(void) {
 }
 
 void test_align(void) {
-	CTX* ctx = init(1024, 1024, 0);
+	CTX* ctx = init(1024, 1024);
 
 	align(ctx);
 
@@ -242,20 +242,6 @@ void test_align(void) {
 	align(ctx);
 	TEST_ASSERT_EQUAL_PTR(ctx->dhere, ALIGN(ctx->dhere, sizeof(CELL)));
 	
-	deinit(ctx);
-}
-
-void test_init_pairs(void) {
-	CTX* ctx = init(128, 128, 1024);
-
-	TEST_ASSERT_NULL(ctx);
-
-	ctx = init(1024, 1024, 128);
-
-	TEST_ASSERT_EQUAL_PTR(ctx->fpairs, ALIGN(ctx->fpairs, sizeof(PAIR)));
-
-	TEST_ASSERT_EQUAL_INT(128, length(ctx, ctx->fpairs));
-
 	deinit(ctx);
 }
 
@@ -274,8 +260,6 @@ int main(void) {
 
 	RUN_TEST(test_allot);
 	RUN_TEST(test_align);
-
-	RUN_TEST(test_init_pairs);
 
 	return UNITY_END();
 }
