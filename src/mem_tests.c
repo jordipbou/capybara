@@ -94,6 +94,33 @@ void test_stack() {
 	deinit(ctx);
 }
 
+void fib(CTX* ctx) {
+	dup(ctx);
+	push(ctx, 1);
+	gt(ctx);
+	if (pop(ctx)) {
+		dec(ctx);
+		dup(ctx);
+		dec(ctx);
+		fib(ctx);
+		swap(ctx);
+		fib(ctx);
+		add(ctx);
+	}
+}
+
+void test_fib() {
+	CTX* ctx = init(4096);
+
+	push(ctx, 36);
+
+	fib(ctx);
+
+	TEST_ASSERT_EQUAL_INT(14930352, pop(ctx));
+
+	deinit(ctx);
+}
+
 int main(void) {
 	UNITY_BEGIN();
 
@@ -104,6 +131,8 @@ int main(void) {
 	RUN_TEST(test_allot);
 
 	RUN_TEST(test_stack);
+
+	RUN_TEST(test_fib);
 
 	return UNITY_END();
 }

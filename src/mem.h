@@ -175,9 +175,43 @@ CELL pop(CTX* ctx) {
 		return 0;
 	}
 	PAIR* p = ctx->dstack;
+	CELL value = p->value;
 	ctx->dstack = UNTYPED(p->next);
 
 	p->next = AS_FREE(ctx->top->next);
 	p->prev = NIL(ctx);
 	ctx->top->next = AS_NIL(p);
+
+	return value;
+}
+
+// TESTING OPERATIONS
+
+void dup(CTX* ctx) {
+	CELL X = pop(ctx);
+	push(ctx, X); push(ctx, X);
+}
+
+void gt(CTX* ctx) {
+	CELL X = pop(ctx);
+	CELL Y = pop(ctx);
+	push(ctx, Y > X);
+}
+
+void dec(CTX* ctx) {
+	CELL X = pop(ctx);
+	push(ctx, X - 1);
+}
+
+void swap(CTX* ctx) {
+	CELL X = pop(ctx);
+	CELL Y = pop(ctx);
+	push(ctx, X);
+	push(ctx, Y);
+}
+
+void add(CTX* ctx) {
+	CELL X = pop(ctx);
+	CELL Y = pop(ctx);
+	push(ctx, Y + X);
 }
