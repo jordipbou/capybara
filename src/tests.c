@@ -175,7 +175,7 @@ void test_compile_cfunc(void) {
 	deinit(ctx);
 }
 
-void test_compile_push(void) {
+void test_compile_Lx(void) {
 	CTX* ctx = init(1024, 1024);
 
 	TEST_ASSERT_EQUAL_INT(ctx->code, ctx->chere);
@@ -183,7 +183,7 @@ void test_compile_push(void) {
 	TEST_ASSERT_EQUAL_INT(0, ctx->Lx);
 
 	BYTE* chere = unprotect(ctx);
-	CELL bytes = compile_push(ctx, 13);
+	CELL bytes = compile_Lx(ctx, 13);
 	bytes += compile_next(ctx);
 	protect(ctx, chere);
 
@@ -195,13 +195,45 @@ void test_compile_push(void) {
 	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, NEXT);
 
 	chere = unprotect(ctx);
-	bytes += compile_push(ctx, 17);
+	bytes += compile_Lx(ctx, 17);
 	bytes += compile_next(ctx);
 	protect(ctx, chere);
 
 	NEXT = CALL(NEXT, ctx);
 
 	TEST_ASSERT_EQUAL_INT(17, ctx->Lx);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, NEXT);
+
+	deinit(ctx);
+}
+
+void test_compile_Ax(void) {
+	CTX* ctx = init(1024, 1024);
+
+	TEST_ASSERT_EQUAL_INT(ctx->code, ctx->chere);
+
+	TEST_ASSERT_EQUAL_INT(0, ctx->Ax);
+
+	BYTE* chere = unprotect(ctx);
+	CELL bytes = compile_Ax(ctx, 13);
+	bytes += compile_next(ctx);
+	protect(ctx, chere);
+
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, ctx->chere);
+
+	BYTE* NEXT = CALL(ctx->code, ctx);
+
+	TEST_ASSERT_EQUAL_INT(13, ctx->Ax);
+	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, NEXT);
+
+	chere = unprotect(ctx);
+	bytes += compile_Ax(ctx, 17);
+	bytes += compile_next(ctx);
+	protect(ctx, chere);
+
+	NEXT = CALL(NEXT, ctx);
+
+	TEST_ASSERT_EQUAL_INT(17, ctx->Ax);
 	TEST_ASSERT_EQUAL_INT(ctx->code + bytes, NEXT);
 
 	deinit(ctx);
@@ -256,7 +288,8 @@ int main(void) {
 
 	RUN_TEST(test_compile_next);
 	RUN_TEST(test_compile_cfunc);
-	RUN_TEST(test_compile_push);
+	RUN_TEST(test_compile_Lx);
+	RUN_TEST(test_compile_Ax);
 
 	RUN_TEST(test_allot);
 	RUN_TEST(test_align);

@@ -29,6 +29,7 @@ typedef struct _CTX {
 	BYTE* bottom;				// Lower address of data space free region (above header)
 	FUNC* Fx;						// Virtual register with address of function to call from C 
 	CELL Lx;						// Virtual register for passing literal values to C
+	CELL Ax;						// Virtual register for passing address values to C
 	BYTE* code;					// Pointer to code space
 } CTX;
 
@@ -72,6 +73,7 @@ CTX* init(CELL dsize, CELL csize) {
 	ctx->csize = csize;
 	ctx->Fx = NULL;
 	ctx->Lx = 0;
+	ctx->Ax = 0;
 
 #if __linux__
 	ctx->code = mmap(NULL, csize, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
@@ -182,7 +184,7 @@ CELL compile_next(CTX* ctx) {
 }
 
 CELL compile_reg(CTX* ctx, CELL lit, BYTE offset) {
-	// 0:  49 ba <C:Address of cfunc>			movabs r10,0xff00ff11ff22ff33
+	// 0:  49 ba <C:Address of cfunc/lit>	movabs r10,0xff00ff11ff22ff33
 	// a:  4c 89 52 <B:Fx offset>					mov    Q_WORD PTR [rdx+<Fx offset>],r10
 	// 14 bytes
 	CELL bytes = compile_bytes(ctx, "\x49\xBA", 2);
@@ -193,7 +195,8 @@ CELL compile_reg(CTX* ctx, CELL lit, BYTE offset) {
 }
 
 #define compile_cfunc(ctx, cfunc)	compile_reg(ctx, (CELL)cfunc, offsetof(CTX, Fx))
-#define compile_push(ctx, lit)		compile_reg(ctx, lit, offsetof(CTX, Lx))
+#define compile_Lx(ctx, lit)			compile_reg(ctx, lit, offsetof(CTX, Lx))
+#define compile_Ax(ctx, addr)			compile_reg(ctx, addr, offsetof(CTX, Ax))
 
 // RDI: Not used as windows only accepts 4 parameters on registers
 // RSI: Not used as windows only accepts 4 parameters on registers
